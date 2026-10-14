@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>จับคู่รูปภาพ – Nombor Ratus Dan Ribu</title>
+<style>
+:root{--bg:#fff8e7;--ink:#26324a;--card:#fff;--line:#26324a;--blue:#3a86ff;--red:#e8505b;--yel:#ffbe0b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b2236;--ink:#fff4d6;--card:#2a3452;--line:#fff4d6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Mali","Sarabun","Noto Sans Thai",system-ui,sans-serif;font-size:20px;line-height:1.4}
+main{max-width:640px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:22px;margin:0}
+.stars{font-size:24px;font-weight:700;white-space:nowrap}
+.panel{background:var(--card);border:3px solid var(--line);border-radius:22px;padding:14px;margin:12px 0;box-shadow:0 5px 0 var(--line)}
+button{font:inherit;font-weight:700;color:#26324a;background:var(--yel);border:3px solid var(--line);border-radius:18px;padding:10px 14px;min-height:52px;cursor:pointer;box-shadow:0 4px 0 var(--line);touch-action:manipulation}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+button:focus-visible{outline:4px solid var(--blue);outline-offset:2px}
+.lvl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.lvl button{flex:1;min-width:120px;background:#fff;font-size:16px}
+.lvl button.on{background:var(--yel)}
+.info{display:flex;justify-content:space-between;font-weight:700;margin:4px 0 10px}
+#grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.c{height:112px;padding:4px;font-size:18px;background:var(--blue);color:#fff;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;align-content:center;gap:3px;overflow:hidden}
+.c.q{font-size:38px}
+.c.open{background:#fff;color:#26324a}
+.c.ok{background:#9be8c4;color:#26324a;cursor:default}
+.c.word{font-size:19px;line-height:1.2}
+.b{display:inline-block;border:2px solid #26324a;border-radius:4px}
+.b100{width:20px;height:20px;background:#e8505b}
+.b1000{width:30px;height:30px;background:#3a86ff}
+.fb{min-height:60px;text-align:center;font-weight:700;margin-top:10px}
+.hint{background:#e8f1ff;color:#26324a;border-radius:14px;padding:8px;font-size:17px;font-weight:400}
+.leg{text-align:center;font-size:17px;margin:0 0 8px}
+@media (min-width:520px){#grid{grid-template-columns:repeat(4,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>🃏 จับคู่รูปภาพกับคำมลายู</h1><div class="stars" id="stars">⭐ 0</div></header>
+<div class="panel">
+<div class="lvl" id="lvl"></div>
+<p class="leg">🟥 = 100 (ratus) &nbsp; 🟦 = 1,000 (ribu)</p>
+<div class="info"><span id="mv">ครั้งที่เปิด: 0</span><span id="pr">คู่ที่เจอ: 0/6</span></div>
+<div id="grid"></div>
+<div class="fb" id="fb">แตะการ์ดเพื่อเปิด หาคู่ รูปบล็อก กับ คำมลายู ที่ตรงกัน</div>
+<div style="text-align:center"><button id="nw" style="background:#fff">🔁 เริ่มใหม่</button></div>
+</div>
+</main>
+<script>
+var N={1:"satu",2:"dua",3:"tiga",4:"empat",5:"lima",6:"enam",7:"tujuh",8:"lapan",9:"sembilan"};
+function my(n){var k=Math.floor(n/1000),c=Math.floor(n%1000/100),s="";
+ if(k)s=(k==1?"seribu":N[k]+" ribu");
+ if(c)s+=(s?" ":"")+(c==1?"seratus":N[c]+" ratus");return s}
+function pic(n){var h="",k=Math.floor(n/1000),c=Math.floor(n%1000/100),i;
+ for(i=0;i<k;i++)h+='<span class="b b1000"></span>';
+ for(i=0;i<c;i++)h+='<span class="b b100"></span>';return h}
+var LV=[["🟥 หลักร้อย","h"],["🟦 หลักพัน","t"],["🌈 ผสม","m"]],lv=0,stars=0,cards=[],first=null,lock=false,moves=0,found=0,TOTAL=6;
+var $=function(i){return document.getElementById(i)};
+function shuf(a){return a.slice().sort(function(){return Math.random()-.5})}
+function nums(){var s={},o=[];
+ while(o.length<TOTAL){var n,m=LV[lv][1];
+  if(m=="h")n=(Math.floor(Math.random()*9)+1)*100;
+  else if(m=="t")n=(Math.floor(Math.random()*9)+1)*1000;
+  else n=Math.random()<.4?(Math.floor(Math.random()*9)+1)*100:(Math.floor(Math.random()*3)+1)*1000+(Math.floor(Math.random()*4)+1)*100;
+  if(!s[n]){s[n]=1;o.push(n)}}
+ return o}
+function build(){
+ $("lvl").innerHTML="";
+ LV.forEach(function(l,i){var b=document.createElement("button");b.textContent=l[0];b.className=i==lv?"on":"";b.onclick=function(){lv=i;build()};$("lvl").appendChild(b)});
+ var ns=nums();cards=[];
+ ns.forEach(function(n){cards.push({n:n,t:"p"});cards.push({n:n,t:"w"})});
+ cards=shuf(cards);first=null;lock=false;moves=0;found=0;upd();
+ $("fb").textContent="แตะการ์ดเพื่อเปิด หาคู่ รูปบล็อก กับ คำมลายู ที่ตรงกัน";
+ var g=$("grid");g.innerHTML="";
+ cards.forEach(function(c,i){var b=document.createElement("button");b.className="c q";b.textContent="❓";b.id="c"+i;b.setAttribute("aria-label","การ์ดใบที่ "+(i+1));b.onclick=function(){flip(i)};g.appendChild(b)})}
+function upd(){$("mv").textContent="ครั้งที่เปิด: "+moves;$("pr").textContent="คู่ที่เจอ: "+found+"/"+TOTAL}
+function show(i){var c=cards[i],b=$("c"+i);b.className="c open"+(c.t=="w"?" word":"");b.innerHTML=c.t=="p"?pic(c.n):my(c.n)}
+function hide(i){var b=$("c"+i);b.className="c q";b.textContent="❓"}
+function beep(ok){try{var a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=ok?760:210;g.gain.value=.12;o.start();o.stop(a.currentTime+(ok?.2:.3))}catch(e){}}
+function flip(i){
+ if(lock||i===first||cards[i].done)return;
+ show(i);
+ if(first===null){first=i;return}
+ moves++;var a=first,b=i;first=null;
+ var A=cards[a],B=cards[b];
+ if(A.n==B.n&&A.t!=B.t){
+  A.done=B.done=true;found++;beep(true);
+  $("c"+a).className="c ok"+(A.t=="w"?" word":"");$("c"+b).className="c ok"+(B.t=="w"?" word":"");
+  $("fb").textContent=["เก่งมาก! 🎉","เจอคู่แล้ว! 🌟","สุดยอด! 👏"][found%3];
+  upd();
+  if(found==TOTAL){var s=moves<=9?3:moves<=14?2:1;stars+=s;$("stars").textContent="⭐ "+stars;
+   $("fb").innerHTML="จบเกม! เปิด "+moves+" ครั้ง ได้ "+"⭐".repeat(s)+"<br>กด 🔁 เริ่มใหม่ เพื่อเล่นอีกรอบ"}
+ }else{
+  lock=true;beep(false);upd();
+  var why=A.n==B.n?"การ์ดสองใบนี้เป็นชนิดเดียวกัน ต้องเป็น รูป + คำ":"ยังไม่ใช่คู่กัน ลองจำตำแหน่งแล้วเปิดใหม่นะ";
+  $("fb").innerHTML="<div class='hint'>💡 "+why+"</div>";
+  setTimeout(function(){hide(a);hide(b);lock=false},1300)}}
+$("nw").onclick=build;
+build();
+</script>
+</body>
+</html>
